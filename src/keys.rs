@@ -13,6 +13,11 @@ pub enum Action {
     Home,
     End,
     OpenInBrowser,
+    /// `L` on a build row — open an ephemeral Logs tab tailing that
+    /// build's CloudWatch log stream (derived from the API response's
+    /// `logs.groupName` + `logs.streamName`). Switches focus to it.
+    /// No-op on a Logs tab.
+    OpenBuildLogs,
     SwitchTab(usize),
     NextTab,
     PrevTab,
@@ -31,6 +36,7 @@ pub fn handle(key: KeyEvent, _app: &App) -> Option<Action> {
         KeyCode::Home | KeyCode::Char('g') => Some(Action::Home),
         KeyCode::End | KeyCode::Char('G') => Some(Action::End),
         KeyCode::Enter | KeyCode::Char('o') => Some(Action::OpenInBrowser),
+        KeyCode::Char('L') => Some(Action::OpenBuildLogs),
         KeyCode::Tab => Some(Action::NextTab),
         KeyCode::BackTab => Some(Action::PrevTab),
         KeyCode::Char(c @ '1'..='9') => Some(Action::SwitchTab((c as u8 - b'1') as usize)),
@@ -49,6 +55,7 @@ pub async fn apply(action: Action, app: &mut App) -> bool {
         Action::Home => app.move_selection(-(i32::MAX as isize)),
         Action::End => app.move_selection(i32::MAX as isize),
         Action::OpenInBrowser => app.open_focused(),
+        Action::OpenBuildLogs => app.open_logs_for_selected_build(),
         Action::NextTab => {
             let next = (app.active_tab + 1) % app.tabs.len();
             app.switch_tab(next);

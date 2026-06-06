@@ -333,4 +333,71 @@ impl App {
             }
         }
     }
+
+    /// `L` on a build row — open an ephemeral Logs tab that tails the
+    /// selected build's CloudWatch log stream (or switch to it if one
+    /// already exists for that build). The stream name comes from the
+    /// API response's `logs.streamName`; old builds without log
+    /// metadata toast an explanation instead of opening a dead tab.
+    pub fn open_logs_for_selected_build(&mut self) {
+        let (build_id, group, stream, region) = {
+            let tab = self.active();
+            let TabData::Builds(b) = &tab.data else {
+                self.status = "select a build row first (`L` works on a Builds tab)".to_string();
+                return;
+            };
+            let Some(rec) = b.items.get(b.selected) else {
+                self.status = "no build selected".to_string();
+                return;
+            };
+            let (Some(group), Some(stream)) = (rec.logs_group.clone(), rec.logs_stream.clone())
+            else {
+                self.status =
+                    format!("no log stream on build {} — CloudWatch metadata absent", rec.id);
+                return;
+            };
+            (
+                rec.id.clone(),
+                group,
+                stream,
+                tab.spec.region.clone(),
+            )
+        };
+
+        // Short label: trailing chunk of the build id (after the last
+        // colon) is the per-run identifier; full id is too long for a
+        // tab strip.
+        let short = build_id.rsplit(':').next().unwrap_or(&build_id);
+        let short = short.chars().take(8).collect::<String>();
+        let tab_name = format!("{short} logs");
+
+        // Switch to an existing matching tab if one's already open
+        // (same stream — switching back to it re-uses the running
+        // `aws logs tail`).
+        if let Some(idx) = self.tabs.iter().position(|t| {
+            t.spec.kind == TabKind::Logs
+                && t.spec.log_stream.as_deref() == Some(stream.as_str())
+                && t.spec.log_group.as_deref() == Some(group.as_str())
+        }) {
+            self.switch_tab(idx);
+            self.status = format!("switched to {}", self.tabs[idx].name);
+            return;
+        }
+
+        let spec = TabSpec {
+            kind: TabKind::Logs,
+            region,
+            project: None,
+            log_group: Some(group),
+            log_stream: Some(stream),
+        };
+        self.tabs.push(TabState {
+            name: tab_name.clone(),
+            data: TabData::empty_for(TabKind::Logs),
+            spec,
+        });
+        self.active_tab = self.tabs.len() - 1;
+        self.refresh_active();
+        self.status = format!("opened {tab_name}");
+    }
 }
