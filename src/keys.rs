@@ -13,6 +13,9 @@ pub enum Action {
     Home,
     End,
     OpenInBrowser,
+    /// `y` — copy the focused build row's CodeBuild console URL to
+    /// the OS clipboard.
+    YankUrl,
     /// `L` on a build row — open an ephemeral Logs tab tailing that
     /// build's CloudWatch log stream (derived from the API response's
     /// `logs.groupName` + `logs.streamName`). Switches focus to it.
@@ -36,6 +39,7 @@ pub fn handle(key: KeyEvent, _app: &App) -> Option<Action> {
         KeyCode::Home | KeyCode::Char('g') => Some(Action::Home),
         KeyCode::End | KeyCode::Char('G') => Some(Action::End),
         KeyCode::Enter | KeyCode::Char('o') => Some(Action::OpenInBrowser),
+        KeyCode::Char('y') => Some(Action::YankUrl),
         KeyCode::Char('L') => Some(Action::OpenBuildLogs),
         KeyCode::Tab => Some(Action::NextTab),
         KeyCode::BackTab => Some(Action::PrevTab),
@@ -55,6 +59,7 @@ pub async fn apply(action: Action, app: &mut App) -> bool {
         Action::Home => app.move_selection(-(i32::MAX as isize)),
         Action::End => app.move_selection(i32::MAX as isize),
         Action::OpenInBrowser => app.open_focused(),
+        Action::YankUrl => app.yank_focused_url(),
         Action::OpenBuildLogs => app.open_logs_for_selected_build(),
         Action::NextTab => {
             let next = (app.active_tab + 1) % app.tabs.len();

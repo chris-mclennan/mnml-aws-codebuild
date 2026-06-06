@@ -1,5 +1,6 @@
 mod app;
 mod blit;
+mod clipboard;
 #[allow(dead_code)]
 mod codebuild;
 mod config;

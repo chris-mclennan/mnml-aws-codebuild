@@ -322,16 +322,37 @@ impl App {
     }
 
     pub fn open_focused(&mut self) {
-        let tab = self.active();
-        if let TabData::Builds(b) = &tab.data
-            && let Some(rec) = b.items.get(b.selected)
-            && let Some(url) = rec.logs_deep_link.as_deref()
-        {
-            match webbrowser::open(url) {
-                Ok(()) => self.status = format!("opened {url}"),
-                Err(e) => self.status = format!("open failed: {e}"),
-            }
+        let Some(url) = self.focused_url() else {
+            return;
+        };
+        match webbrowser::open(&url) {
+            Ok(()) => self.status = format!("opened {url}"),
+            Err(e) => self.status = format!("open failed: {e}"),
         }
+    }
+
+    /// `y` on a focused build row — copy the CodeBuild console URL
+    /// to the OS clipboard. Restores the pre-split mnml
+    /// `aws.copy_selected_build_url` command (the CodeBuild console
+    /// URL goes via `logs.deepLink`, which routes to the build
+    /// detail page).
+    pub fn yank_focused_url(&mut self) {
+        let Some(url) = self.focused_url() else {
+            self.status = "no URL for this row".to_string();
+            return;
+        };
+        match crate::clipboard::copy(&url) {
+            Ok(()) => self.status = format!("copied {url}"),
+            Err(e) => self.status = format!("copy failed: {e}"),
+        }
+    }
+
+    fn focused_url(&self) -> Option<String> {
+        let tab = self.active();
+        if let TabData::Builds(b) = &tab.data {
+            return b.items.get(b.selected).and_then(|rec| rec.logs_deep_link.clone());
+        }
+        None
     }
 
     /// `L` on a build row — open an ephemeral Logs tab that tails the
