@@ -231,14 +231,13 @@ fn draw_builds_table(f: &mut Frame, area: Rect, tab: &TabState) {
 fn draw_logs(f: &mut Frame, area: Rect, tab: &TabState) {
     let TabData::Logs(l) = &tab.data else { return };
     if let Some(err) = &l.last_error {
-        let p = Paragraph::new(format!("error: {err}"))
-            .style(Style::default().fg(Color::Red));
+        let p = Paragraph::new(format!("error: {err}")).style(Style::default().fg(Color::Red));
         f.render_widget(p, area);
         return;
     }
     let Some(pane) = l.pane.as_ref() else {
-        let p = Paragraph::new("(spawning aws logs tail…)")
-            .style(Style::default().fg(Color::DarkGray));
+        let p =
+            Paragraph::new("(spawning aws logs tail…)").style(Style::default().fg(Color::DarkGray));
         f.render_widget(p, area);
         return;
     };
@@ -272,7 +271,7 @@ fn draw_logs(f: &mut Frame, area: Rect, tab: &TabState) {
 }
 
 fn draw_status(f: &mut Frame, area: Rect, app: &App) {
-    let hint = " 1-9 tab · ↑↓/jk move · Enter/o open · r refresh · q quit ";
+    let hint = " 1-9 tab · ↑↓/jk move · Enter/o open · y yank URL · L logs · r refresh · q quit ";
     let line = Line::from(vec![
         Span::styled(
             format!(" {} ", app.status),

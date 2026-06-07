@@ -350,7 +350,10 @@ impl App {
     fn focused_url(&self) -> Option<String> {
         let tab = self.active();
         if let TabData::Builds(b) = &tab.data {
-            return b.items.get(b.selected).and_then(|rec| rec.logs_deep_link.clone());
+            return b
+                .items
+                .get(b.selected)
+                .and_then(|rec| rec.logs_deep_link.clone());
         }
         None
     }
@@ -373,16 +376,13 @@ impl App {
             };
             let (Some(group), Some(stream)) = (rec.logs_group.clone(), rec.logs_stream.clone())
             else {
-                self.status =
-                    format!("no log stream on build {} — CloudWatch metadata absent", rec.id);
+                self.status = format!(
+                    "no log stream on build {} — CloudWatch metadata absent",
+                    rec.id
+                );
                 return;
             };
-            (
-                rec.id.clone(),
-                group,
-                stream,
-                tab.spec.region.clone(),
-            )
+            (rec.id.clone(), group, stream, tab.spec.region.clone())
         };
 
         // Short label: trailing chunk of the build id (after the last
