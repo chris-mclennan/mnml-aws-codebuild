@@ -55,6 +55,7 @@ pub async fn run(app: &mut App, socket: &Path) -> Result<()> {
             &mut *w,
             &Message::Hello {
                 version: PROTOCOL_VERSION,
+                caps: tmnl_protocol::Caps::empty(),
             },
         )
         .map_err(|e| anyhow!("blit: hello: {e}"))?;
@@ -170,6 +171,7 @@ pub async fn run(app: &mut App, socket: &Path) -> Result<()> {
                     }
                 }
                 Ok(InputEvent::Mouse(_)) => {}
+                Ok(_) => {}
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => return Ok(()),
             }
@@ -188,6 +190,8 @@ pub async fn run(app: &mut App, socket: &Path) -> Result<()> {
             .draw(|frame| draw(frame, app))
             .map_err(|e| anyhow!("blit: draw: {e}"))?;
         let cursor = terminal.get_cursor_position().ok();
+
+        crate::theme::poll_refresh();
 
         let buf = terminal.backend().buffer();
         let bw = buf.area.width;
@@ -264,6 +268,7 @@ fn modifier_to_bits(m: Modifier) -> u32 {
 }
 
 fn color_to_rgba(c: Color, is_bg: bool) -> u32 {
+    let c = crate::theme::remap(c);
     match c {
         Color::Rgb(r, g, b) => pack_rgba_u8(r, g, b, 0xff),
         Color::Reset => {

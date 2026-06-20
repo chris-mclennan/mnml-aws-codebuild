@@ -7,6 +7,7 @@ mod config;
 mod keys;
 #[allow(dead_code)]
 mod log_tail;
+mod theme;
 mod ui;
 
 use anyhow::Result;
