@@ -1,5 +1,4 @@
 mod app;
-mod blit;
 mod clipboard;
 #[allow(dead_code)]
 mod codebuild;
@@ -23,12 +22,6 @@ struct Cli {
     /// Print the resolved config + auth state and exit.
     #[arg(long)]
     check: bool,
-    /// Blit-host mode — render into a UDS-served cell grid instead
-    /// of the local terminal. Used by mnml / tmnl to host this
-    /// binary as a pane (`:host.launch mnml-aws-codebuild
-    /// --blit /tmp/x.sock`).
-    #[arg(long, value_name = "SOCKET")]
-    blit: Option<String>,
 }
 
 #[tokio::main]
@@ -56,10 +49,5 @@ async fn main() -> Result<()> {
     }
 
     let mut app = app::App::new(cfg)?;
-
-    if let Some(socket) = cli.blit {
-        blit::run(&mut app, std::path::Path::new(&socket)).await
-    } else {
-        ui::run(&mut app).await
-    }
+    ui::run(&mut app).await
 }
